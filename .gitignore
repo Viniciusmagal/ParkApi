@@ -1,3 +1,4 @@
 backend.log
 *.log
 .vercel
+.env*

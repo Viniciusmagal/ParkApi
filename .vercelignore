@@ -1,0 +1,5 @@
+api/target
+park_app/build
+park_app/.dart_tool
+**/.dart_tool
+backend.log
