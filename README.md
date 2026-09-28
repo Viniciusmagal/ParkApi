@@ -9,7 +9,6 @@
 ![H2](https://img.shields.io/badge/Database-H2-1021FF?style=for-the-badge)
 ![Flutter](https://img.shields.io/badge/App-Flutter-02569B?style=for-the-badge&logo=flutter)
 
-[Sobre](#-sobre) • [Funcionalidades](#-funcionalidades) • [Tecnologias](#-tecnologias-utilizadas) • [Como rodar](#-como-rodar-em-qualquer-máquina) • [Deploy](#-deploy) • [Endpoints](#-principais-endpoints) • [Autores](#-autores)
 
 </div>
 
