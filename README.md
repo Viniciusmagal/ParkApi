@@ -21,8 +21,6 @@ O **ParkingAPI** é um sistema de gerenciamento de estacionamento desenvolvido c
 
 O motorista chega ao estacionamento, solicita a vaga pelo aplicativo e recebe um **QR Code** com os dados do ticket. Na saída, o atendente lê o QR Code, o sistema calcula o valor e libera a vaga. O administrador acompanha tudo por um painel com indicadores em tempo real.
 
-O planejamento detalhado da evolução do sistema está em [`SPEC.md`](SPEC.md).
-
 ---
 
 ## 🚀 Funcionalidades
