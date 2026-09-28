@@ -3,12 +3,14 @@ package com.mballem.demoparkapi.service;
 import com.mballem.demoparkapi.entity.Cliente;
 import com.mballem.demoparkapi.exception.CpfUniqueViolationException;
 import com.mballem.demoparkapi.exception.EntityNotFoundException;
+import com.mballem.demoparkapi.exception.SolicitacaoVagaException;
 import com.mballem.demoparkapi.repository.ClienteRepository;
 import com.mballem.demoparkapi.repository.projection.ClienteProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
+    private final UsuarioService usuarioService;
 
     @Transactional
     public Cliente salvar(Cliente cliente) {
@@ -41,7 +44,11 @@ public class ClienteService {
 
     @Transactional(readOnly = true)
     public Cliente buscarPorUsuarioId(Long id) {
-        return clienteRepository.findByUsuarioId(id);
+        Cliente cliente = clienteRepository.findByUsuarioId(id);
+        if (cliente == null) {
+            throw new EntityNotFoundException("Cliente", "usuario " + id);
+        }
+        return cliente;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +56,25 @@ public class ClienteService {
         return clienteRepository.findByCpf(cpf).orElseThrow(
                 () -> new EntityNotFoundException("Cliente", cpf)
         );
+    }
 
+    @Transactional
+    public Cliente buscarOuCriarParaUsuario(Long usuarioId, String nome, String cpf) {
+        Cliente existente = clienteRepository.findByUsuarioId(usuarioId);
+        if (existente != null) {
+            return existente;
+        }
+        if (nome == null || nome.isBlank() || cpf == null || cpf.isBlank()) {
+            throw new SolicitacaoVagaException("exception.solicitacao.dadosCliente", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        String cpfNumerico = cpf.replaceAll("\\D", "");
+        if (clienteRepository.existsByCpf(cpfNumerico)) {
+            throw new CpfUniqueViolationException(cpfNumerico);
+        }
+        Cliente cliente = new Cliente();
+        cliente.setNome(nome.trim());
+        cliente.setCpf(cpfNumerico);
+        cliente.setUsuario(usuarioService.buscarPorId(usuarioId));
+        return salvar(cliente);
     }
 }

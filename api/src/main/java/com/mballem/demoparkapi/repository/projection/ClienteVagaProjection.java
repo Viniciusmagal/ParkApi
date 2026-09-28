@@ -13,10 +13,11 @@ public interface ClienteVagaProjection {
     String getModelo();
     String getCor();
     String getClienteCpf();
+    String getClienteNome();
     String getRecibo();
-    @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime getDataEntrada();
-    @JsonFormat(pattern = "yyyy-MM-dd hh:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime getDataSaida();
     String getVagaCodigo();
     BigDecimal getValor();

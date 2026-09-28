@@ -3,8 +3,11 @@ package com.mballem.demoparkapi.service;
 import com.mballem.demoparkapi.entity.Cliente;
 import com.mballem.demoparkapi.entity.ClienteVaga;
 import com.mballem.demoparkapi.entity.Vaga;
+import com.mballem.demoparkapi.exception.SolicitacaoVagaException;
 import com.mballem.demoparkapi.util.EstacionamentoUtils;
+import com.mballem.demoparkapi.web.dto.SolicitacaoVagaDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +25,28 @@ public class EstacionamentoService {
     @Transactional
     public ClienteVaga checkIn(ClienteVaga clienteVaga) {
         Cliente cliente = clienteService.buscarPorCpf(clienteVaga.getCliente().getCpf());
-        clienteVaga.setCliente(cliente);
+        return registrarEntrada(clienteVaga, cliente);
+    }
 
-        Vaga vaga = vagaService.buscarPorVagaLivre();
-        vaga.setStatus(Vaga.StatusVaga.OCUPADA);
-        clienteVaga.setVaga(vaga);
+    @Transactional
+    public ClienteVaga solicitarVaga(Long usuarioId, SolicitacaoVagaDto dto) {
+        Cliente cliente = clienteService.buscarOuCriarParaUsuario(usuarioId, dto.getNome(), dto.getCpf());
 
-        clienteVaga.setDataEntrada(LocalDateTime.now());
+        if (clienteVagaService.existeAtivoPorCliente(cliente.getId())) {
+            throw new SolicitacaoVagaException("exception.solicitacao.clienteAtivo", HttpStatus.CONFLICT);
+        }
 
-        clienteVaga.setRecibo(EstacionamentoUtils.gerarRecibo());
+        String placa = dto.getPlaca().trim().toUpperCase();
+        if (clienteVagaService.existeAtivoPorPlaca(placa)) {
+            throw new SolicitacaoVagaException("exception.solicitacao.placaAtiva", HttpStatus.CONFLICT, placa);
+        }
 
-        return clienteVagaService.salvar(clienteVaga);
+        ClienteVaga clienteVaga = new ClienteVaga();
+        clienteVaga.setPlaca(placa);
+        clienteVaga.setMarca(dto.getMarca().trim());
+        clienteVaga.setModelo(dto.getModelo().trim());
+        clienteVaga.setCor(dto.getCor().trim());
+        return registrarEntrada(clienteVaga, cliente);
     }
 
     @Transactional
@@ -51,6 +65,20 @@ public class EstacionamentoService {
 
         clienteVaga.setDataSaida(dataSaida);
         clienteVaga.getVaga().setStatus(Vaga.StatusVaga.LIVRE);
+
+        return clienteVagaService.salvar(clienteVaga);
+    }
+
+    private ClienteVaga registrarEntrada(ClienteVaga clienteVaga, Cliente cliente) {
+        clienteVaga.setCliente(cliente);
+
+        Vaga vaga = vagaService.buscarPorVagaLivre();
+        vaga.setStatus(Vaga.StatusVaga.OCUPADA);
+        clienteVaga.setVaga(vaga);
+
+        clienteVaga.setDataEntrada(LocalDateTime.now());
+
+        clienteVaga.setRecibo(EstacionamentoUtils.gerarRecibo());
 
         return clienteVagaService.salvar(clienteVaga);
     }

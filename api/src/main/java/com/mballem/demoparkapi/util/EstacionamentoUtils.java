@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -26,9 +27,9 @@ public class EstacionamentoUtils {
         } else {
             long addicionalMinutes = minutes - 60;
             Double totalParts = ((double) addicionalMinutes / 15);
-            if (totalParts > totalParts.intValue()) { // 4.66 > 4
+            if (totalParts > totalParts.intValue()) {
                 total += PRIMEIROS_60_MINUTES + (ADICIONAL_15_MINUTES * (totalParts.intValue() + 1));
-            } else { // 4.0
+            } else {
                 total += PRIMEIROS_60_MINUTES + (ADICIONAL_15_MINUTES * totalParts.intValue());
             }
         }
@@ -43,13 +44,7 @@ public class EstacionamentoUtils {
         return desconto.setScale(2, RoundingMode.HALF_EVEN);
     }
 
-    // 2023-03-16T15:23:48.616463500
-    // 20230316-152121
     public static String gerarRecibo() {
-        LocalDateTime date = LocalDateTime.now();
-        String recibo = date.toString().substring(0,19);
-        return recibo.replace("-", "")
-                .replace(":", "")
-                .replace("T", "-");
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
     }
 }

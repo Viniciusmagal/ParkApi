@@ -1,12 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
+import '../services/session.dart';
+import '../widgets/common.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -19,29 +19,30 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   Future<void> _login() async {
+    final username = _usernameController.text.trim().toLowerCase();
+    final password = _passwordController.text;
+    if (username.isEmpty || password.isEmpty) {
+      showMessage(context, 'Informe e-mail e senha.', error: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
-    final response = await ApiService.post('/auth', {
-      'username': _usernameController.text,
-      'password': _passwordController.text,
-    });
-
-    setState(() => _isLoading = false);
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('jwt_token', data['token']);
-
+    try {
+      final data = await ApiService.postJson('/auth', {
+        'username': username,
+        'password': password,
+      });
+      await Session.save(data['token']);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => SessionGate.homeFor()),
       );
-    } else {
+    } on ApiException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha na autenticação. Verifique os dados.')),
-      );
+      showMessage(context, e.status == 0 ? e.message : 'Falha na autenticação. Verifique os dados.', error: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -63,7 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 40),
-                      // Logo / Título do App
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: const [
@@ -81,7 +81,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 48),
 
-                      // Cabeçalho de Boas-Vindas
                       const Text(
                         'Bem-vindo de volta!',
                         style: TextStyle(
@@ -98,11 +97,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 36),
 
-                      // Campo de Usuário / E-mail
                       TextField(
                         controller: _usernameController,
+                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'E-mail ou telefone',
+                          hintText: 'E-mail',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
                           prefixIcon: const Icon(Icons.mail_outline, color: Color(0xFF64748B), size: 20),
                           filled: true,
@@ -116,10 +115,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Campo de Senha
                       TextField(
                         controller: _passwordController,
                         obscureText: _obscurePassword,
+                        onSubmitted: (_) => _isLoading ? null : _login(),
                         decoration: InputDecoration(
                           hintText: 'Senha',
                           hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
@@ -145,11 +144,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Esqueceu a Senha
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () => showMessage(context, 'Procure o administrador do estacionamento para redefinir sua senha.'),
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
                             minimumSize: Size.zero,
@@ -167,7 +165,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // Botão Entrar
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -201,7 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // Rodapé: Criar Conta Corrigido
               Padding(
                 padding: const EdgeInsets.only(bottom: 16.0, top: 8.0),
                 child: Row(

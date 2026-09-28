@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,10 +14,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   Future<void> _cadastrar() async {
-    final email = _usernameController.text.trim();
+    final email = _usernameController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
-    // Validação de formato antes do envio
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Insira um e-mail válido (ex: usuario@email.com).')),
@@ -25,9 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A senha deve ter no mínimo 6 caracteres.')),
+        const SnackBar(content: Text('A senha deve ter exatamente 6 caracteres.')),
       );
       return;
     }
@@ -111,8 +110,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _passwordController,
                 obscureText: true,
+                maxLength: 6,
                 decoration: InputDecoration(
-                  hintText: 'Senha (mínimo 6 caracteres)',
+                  counterText: '',
+                  hintText: 'Senha (6 caracteres)',
                   prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF64748B), size: 20),
                   filled: true,
                   fillColor: inputFillColor,

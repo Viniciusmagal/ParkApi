@@ -2,6 +2,7 @@ package com.mballem.demoparkapi.web.controller;
 
 import com.mballem.demoparkapi.entity.Vaga;
 import com.mballem.demoparkapi.service.VagaService;
+import com.mballem.demoparkapi.web.dto.DisponibilidadeDto;
 import com.mballem.demoparkapi.web.dto.VagaCreateDto;
 import com.mballem.demoparkapi.web.dto.VagaResponseDto;
 import com.mballem.demoparkapi.web.dto.mapper.VagaMapper;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @Tag(name = "Vagas", description = "Contém todas as opereções relativas ao recurso de uma vaga")
 @RequiredArgsConstructor
@@ -80,5 +82,20 @@ public class VagaController {
     public ResponseEntity<VagaResponseDto> getByCodigo(@PathVariable String codigo) {
         Vaga vaga = vagaService.buscarPorCodigo(codigo);
         return ResponseEntity.ok(VagaMapper.toDto(vaga));
+    }
+
+    @Operation(summary = "Listar vagas", description = "Lista todas as vagas ordenadas pelo código. Acesso restrito a Role='ADMIN'",
+            security = @SecurityRequirement(name = "security"))
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<VagaResponseDto>> getAll() {
+        return ResponseEntity.ok(vagaService.buscarTodas().stream().map(VagaMapper::toDto).toList());
+    }
+
+    @Operation(summary = "Disponibilidade de vagas", description = "Total de vagas livres e ocupadas. Requisição exige uso de um bearer token.",
+            security = @SecurityRequirement(name = "security"))
+    @GetMapping("/disponibilidade")
+    public ResponseEntity<DisponibilidadeDto> getDisponibilidade() {
+        return ResponseEntity.ok(vagaService.buscarDisponibilidade());
     }
 }

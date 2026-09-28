@@ -10,6 +10,7 @@ import com.mballem.demoparkapi.service.JasperService;
 import com.mballem.demoparkapi.web.dto.EstacionamentoCreateDto;
 import com.mballem.demoparkapi.web.dto.EstacionamentoResponseDto;
 import com.mballem.demoparkapi.web.dto.PageableDto;
+import com.mballem.demoparkapi.web.dto.SolicitacaoVagaDto;
 import com.mballem.demoparkapi.web.dto.mapper.ClienteVagaMapper;
 import com.mballem.demoparkapi.web.dto.mapper.PageableMapper;
 import com.mballem.demoparkapi.web.exception.ErrorMessage;
@@ -39,6 +40,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH;
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY;
@@ -235,4 +237,60 @@ public class EstacionamentoController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Solicitar vaga pelo aplicativo", description = "Aloca uma vaga livre para o cliente logado " +
+            "e cria o cadastro de cliente na primeira solicitação. Acesso restrito a Role='CLIENTE'",
+            security = @SecurityRequirement(name = "security"),
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Vaga alocada com sucesso",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = EstacionamentoResponseDto.class))),
+                    @ApiResponse(responseCode = "404", description = "Nenhuma vaga livre",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "409", description = "Cliente ou placa já possuem estacionamento em aberto",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = ErrorMessage.class))),
+                    @ApiResponse(responseCode = "422", description = "Dados inválidos",
+                            content = @Content(mediaType = " application/json;charset=UTF-8",
+                                    schema = @Schema(implementation = ErrorMessage.class)))
+            })
+    @PostMapping("/solicitar")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<EstacionamentoResponseDto> solicitar(@RequestBody @Valid SolicitacaoVagaDto dto,
+                                                               @AuthenticationPrincipal JwtUserDetails user) {
+        ClienteVaga clienteVaga = estacionamentoService.solicitarVaga(user.getId(), dto);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentContextPath().path("/api/v1/estacionamentos/check-in/{recibo}")
+                .buildAndExpand(clienteVaga.getRecibo())
+                .toUri();
+        return ResponseEntity.created(location).body(ClienteVagaMapper.toDto(clienteVaga));
+    }
+
+    @Operation(summary = "Estacionamento em aberto do cliente logado", description = "Retorna 204 quando não há veículo estacionado.",
+            security = @SecurityRequirement(name = "security"))
+    @GetMapping("/ativo")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ResponseEntity<EstacionamentoResponseDto> getAtivoDoCliente(@AuthenticationPrincipal JwtUserDetails user) {
+        return clienteVagaService.buscarAtivoPorUsuarioId(user.getId())
+                .map(ClienteVagaMapper::toDto)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @Operation(summary = "Veículos no pátio", description = "Lista todos os estacionamentos em aberto. Acesso restrito a Role='ADMIN'",
+            security = @SecurityRequirement(name = "security"))
+    @GetMapping("/ativos")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ClienteVagaProjection>> getAtivos() {
+        return ResponseEntity.ok(clienteVagaService.buscarAtivos());
+    }
+
+    @Operation(summary = "Histórico geral", description = "Lista paginada de todos os estacionamentos. Acesso restrito a Role='ADMIN'",
+            security = @SecurityRequirement(name = "security"))
+    @GetMapping("/todos")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PageableDto> getTodos(@Parameter(hidden = true) @PageableDefault(
+            size = 20, sort = "dataEntrada", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(PageableMapper.toDto(clienteVagaService.buscarTodos(pageable)));
+    }
 }

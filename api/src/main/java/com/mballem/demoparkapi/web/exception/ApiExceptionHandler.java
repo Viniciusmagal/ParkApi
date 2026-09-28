@@ -117,6 +117,15 @@ public class ApiExceptionHandler {
                 .body(new ErrorMessage(request, HttpStatus.NOT_FOUND, message));
     }
 
+    @ExceptionHandler(SolicitacaoVagaException.class)
+    public ResponseEntity<ErrorMessage> solicitacaoVagaException(SolicitacaoVagaException ex, HttpServletRequest request) {
+        String message = messageSource.getMessage(ex.getCodigoMensagem(), ex.getParametros(), request.getLocale());
+        return ResponseEntity
+                .status(ex.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorMessage(request, ex.getStatus(), message));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorMessage> methodArgumentNotValidException(MethodArgumentNotValidException ex,
                                                                         HttpServletRequest request,

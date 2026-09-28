@@ -10,6 +10,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service
 public class ClienteVagaService {
@@ -41,5 +44,30 @@ public class ClienteVagaService {
     @Transactional(readOnly = true)
     public Page<ClienteVagaProjection> buscarTodosPorUsuarioId(Long id, Pageable pageable) {
         return repository.findAllByClienteUsuarioId(id, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ClienteVagaProjection> buscarTodos(Pageable pageable) {
+        return repository.findAllBy(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ClienteVaga> buscarAtivoPorUsuarioId(Long id) {
+        return repository.findFirstByClienteUsuarioIdAndDataSaidaIsNull(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ClienteVagaProjection> buscarAtivos() {
+        return repository.findAllByDataSaidaIsNullOrderByDataEntradaDesc();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeAtivoPorCliente(Long clienteId) {
+        return repository.existsByClienteIdAndDataSaidaIsNull(clienteId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeAtivoPorPlaca(String placa) {
+        return repository.existsByPlacaAndDataSaidaIsNull(placa);
     }
 }

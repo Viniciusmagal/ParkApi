@@ -5,12 +5,16 @@ import com.mballem.demoparkapi.exception.CodigoUniqueViolationException;
 import com.mballem.demoparkapi.exception.EntityNotFoundException;
 import com.mballem.demoparkapi.exception.VagaDisponivelException;
 import com.mballem.demoparkapi.repository.VagaRepository;
+import com.mballem.demoparkapi.web.dto.DisponibilidadeDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static com.mballem.demoparkapi.entity.Vaga.StatusVaga.LIVRE;
+import static com.mballem.demoparkapi.entity.Vaga.StatusVaga.OCUPADA;
 
 @RequiredArgsConstructor
 @Service
@@ -39,5 +43,17 @@ public class VagaService {
         return vagaRepository.findFirstByStatus(LIVRE).orElseThrow(
                 () -> new VagaDisponivelException()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<Vaga> buscarTodas() {
+        return vagaRepository.findAllByOrderByCodigoAsc();
+    }
+
+    @Transactional(readOnly = true)
+    public DisponibilidadeDto buscarDisponibilidade() {
+        long livres = vagaRepository.countByStatus(LIVRE);
+        long ocupadas = vagaRepository.countByStatus(OCUPADA);
+        return new DisponibilidadeDto(livres + ocupadas, livres, ocupadas);
     }
 }
