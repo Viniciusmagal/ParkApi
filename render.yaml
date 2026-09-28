@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: parkapi-api
+    runtime: docker
+    plan: free
+    rootDir: api
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /docs-park
+    autoDeploy: true

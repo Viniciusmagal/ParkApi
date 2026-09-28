@@ -96,7 +96,8 @@ ParkApi/
 │   │   └── widgets/             componentes reutilizáveis
 │   └── pubspec.yaml
 ├── scripts/                     build do aplicativo na Vercel
-├── vercel.json
+├── vercel.json                  deploy do aplicativo web
+├── render.yaml                  deploy da API
 ├── SPEC.md
 └── README.md
 ```
@@ -235,7 +236,15 @@ O arquivo `vercel.json` já configura o build: a Vercel instala o Flutter, compi
 
 ### API
 
-A Vercel hospeda apenas o aplicativo web. A API Spring Boot pode ser publicada em qualquer serviço que rode contêineres Docker (Render, Railway, Fly.io, entre outros) usando o `api/Dockerfile`. A porta é lida da variável `PORT` quando o serviço a define.
+A Vercel hospeda apenas o aplicativo web. A API é publicada no [Render](https://render.com) a partir do arquivo `render.yaml`:
+
+1. No Render, clique em **New → Blueprint** e selecione este repositório.
+2. Confirme a criação do serviço `parkapi-api` (plano gratuito, build pelo `api/Dockerfile`).
+3. Copie o endereço gerado (por exemplo `https://parkapi-api.onrender.com`) e use-o na variável `API_BASE_URL` da Vercel.
+
+No plano gratuito o serviço hiberna após um período sem acesso; a primeira requisição depois disso leva cerca de um minuto. Como o banco é em memória, os dados voltam ao estado inicial a cada reinício.
+
+A API também pode ser publicada em qualquer outro serviço que rode contêineres Docker usando o `api/Dockerfile`. A porta é lida da variável `PORT` quando o serviço a define.
 
 ---
 
